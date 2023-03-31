@@ -37,7 +37,17 @@ class NotesNotifier extends StateNotifier<List<NoteModel>> {
               title: 'A note')
         ]);
 
-  /// Get next note ID.
+  int? _currentNote;
+
+  /// ID of the note to be viewed.
+  int get currentNote => _currentNote as int;
+
+  /// Set ID of the note to be viewed.
+  set currentNote(int value) {
+    _currentNote = value;
+  }
+
+  /// Get new note ID.
   int get newNoteID {
     int highestId = 0;
 
@@ -52,5 +62,17 @@ class NotesNotifier extends StateNotifier<List<NoteModel>> {
   /// Add a new note.
   void newNote(NoteModel newNote) {
     state = [...state, newNote];
+  }
+
+  void saveNote(NoteModel existing){
+    final index = state.indexOf(state.firstWhere((note) {return note.id == existing.id;}));
+    state[index] = existing;
+    state = List.from(state);
+  }
+
+  void deleteNote(int id) {
+    final index = state.indexOf(state.firstWhere((note) {return note.id == id;}));
+    state.removeAt(index);
+    state = List.from(state);
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:notes_app/notifiers/notes_notifier.dart';
 
+import '../../notifiers/notes_notifier.dart';
 import '../../config/app_dimensions.dart';
 import '../../providers.dart';
 import '../../models/note.dart';
@@ -35,7 +35,7 @@ class _NewNoteScreenState extends ConsumerState<NewNoteScreen> {
           final value = _checkBoxValues[i];
           final controller = _checkBoxControllers[i];
 
-          notes.add(Note(controller.text, id: i, isCheckBox: value));
+          notes.add(Note(controller.text, id: i, isCheckBox: true, isChecked: value));
         }
       }
 

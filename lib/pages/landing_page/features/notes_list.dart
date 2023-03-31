@@ -18,12 +18,14 @@ class NotesList extends ConsumerWidget {
     return SizedBox(
       child: GridView.builder(
           shrinkWrap: true,
-          gridDelegate:
-          const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2),
           itemCount: notes.length,
           itemBuilder: (ctx, index) {
-            return _NoteCard(notes[index]);
+            return _NoteCard(notes[index], onPressed: () {
+              ref.read(notesProvider.notifier).currentNote = notes[index].id;
+              Navigator.of(context).pushNamed(AppRouter.existingNoteRoute);
+            });
           }),
     );
   }
@@ -31,15 +33,16 @@ class NotesList extends ConsumerWidget {
 
 class _NoteCard extends StatelessWidget {
   final NoteModel note;
+  final VoidCallback onPressed;
 
-  const _NoteCard(this.note, {Key? key}) : super(key: key);
+  const _NoteCard(this.note, {Key? key, required this.onPressed})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).pushNamed(AppRouter.existingNoteRoute);
+        onPressed();
       },
       child: Card(
         child: Column(children: [
@@ -71,10 +74,13 @@ class _NoteContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(shrinkWrap: true, itemCount: content.length, itemBuilder: (ctx, index) {
-      final note = content[index];
+    return ListView.builder(
+        shrinkWrap: true,
+        itemCount: content.length,
+        itemBuilder: (ctx, index) {
+          final note = content[index];
 
-      return Text(note.content);
-    });
+          return Text(note.content);
+        });
   }
 }
