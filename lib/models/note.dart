@@ -1,4 +1,4 @@
-/// A collection of notes.
+/// A collection of [Note]s.
 class NoteModel {
   final int id, categoryId;
   final String title;

@@ -20,35 +20,69 @@ class _NewNoteScreenState extends ConsumerState<NewNoteScreen> {
   final List<Map<String, dynamic>> _bottomAppBarItems = [];
   final List<TextEditingController> _checkBoxControllers = [];
   final List<bool> _checkBoxValues = [];
-  final List<CheckboxListTile> _checkBoxes = [];
+  final List<StatefulBuilder> _checkBoxes = [];
 
   void _saveNote(NotesNotifier notifier) {
-    if (_titleController.text.isEmpty && _contentController.text.isEmpty) {
+    if (_titleController.text.isEmpty &&
+        _contentController.text.isEmpty &&
+        (_checkBoxes.isEmpty || _checkBoxControllers.first.text.isEmpty)) {
       return;
     } else {
+      final List<Note> notes = [];
+
+      if (_checkBoxes.isNotEmpty) {
+        for (int i = 0; i < _checkBoxes.length; i++) {
+          final value = _checkBoxValues[i];
+          final controller = _checkBoxControllers[i];
+
+          notes.add(Note(controller.text, id: i, isCheckBox: value));
+        }
+      }
+
       final NoteModel newNote = NoteModel(
           title: _titleController.text,
           id: notifier.newNoteID,
           categoryId: 1,
-          notes: [Note(_contentController.text, id: 1, isCheckBox: false)]);
+          notes: [
+            ...notes,
+            Note(_contentController.text, id: notes.length, isCheckBox: false)
+          ]);
 
       notifier.newNote(newNote);
     }
   }
 
   void _newCheckBox() {
+    final TextEditingController controller = TextEditingController();
+
     setState(() {
-      _checkBoxControllers.add(TextEditingController());
+      _checkBoxControllers.add(controller);
       _checkBoxValues.add(false);
-      _checkBoxes.add(CheckboxListTile(
-          value: _checkBoxValues[_checkBoxValues.length-1],
-          title: TextFormField(),
-          onChanged: (newVal) {
-            setState(() {
-              _checkBoxValues[_checkBoxValues.length-1] = newVal!;
-            });
-          }));
+      final currentIndex = _checkBoxControllers.indexOf(controller);
+      _checkBoxes.add(StatefulBuilder(
+        builder: (context, setState) {
+          return CheckboxListTile(
+              autofocus: false,
+              dense: true,
+              value: _checkBoxValues[currentIndex],
+              selected: _checkBoxValues[currentIndex],
+              title: TextFormField(
+                  controller:
+                      _checkBoxControllers[_checkBoxControllers.length - 1],
+                maxLines: null,
+                minLines: null),
+              onChanged: (newVal) {
+                setState(() {
+                  _checkBoxValues[currentIndex] = newVal!;
+                });
+              });
+        },
+      ));
     });
+  }
+
+  void _addBullet() {
+    //TODO: add bullet before start of the sentence nearest to a full stop
   }
 
   void _initBottomAppBarItems() {
@@ -61,8 +95,8 @@ class _NewNoteScreenState extends ConsumerState<NewNoteScreen> {
             icon: const Icon(Icons.check_box), onPressed: _newCheckBox)
       },
       {
-        'widget':
-            _CustomIconButton(icon: const Icon(Icons.list), onPressed: () {})
+        'widget': _CustomIconButton(
+            icon: const Icon(Icons.list), onPressed: _addBullet)
       },
     ]);
   }
@@ -136,7 +170,7 @@ class _CustomIconButton extends StatelessWidget {
 }
 
 class _NoteContent extends StatelessWidget {
-  final List<CheckboxListTile> checkboxes;
+  final List<StatefulBuilder> checkboxes;
   final TextEditingController contentController;
 
   const _NoteContent(
