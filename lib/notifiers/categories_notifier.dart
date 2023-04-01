@@ -6,7 +6,7 @@ class CategoriesNotifier extends StateNotifier<List<NoteCategory>> {
   CategoriesNotifier()
       : super([
           const NoteCategory(id: 1, name: 'Important'),
-          const NoteCategory(id: 1, name: 'To-do')
+          const NoteCategory(id: 2, name: 'To-do')
         ]);
 
   /// Add a new category and notify listeners.

@@ -1,3 +1,5 @@
+import 'dart:math' show Random;
+
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +26,20 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
 
   bool _isLoading = true;
 
+  final List<Color> _predefinedColors = [
+    Colors.amber,
+    Colors.blue,
+    Colors.green,
+    Colors.yellow,
+    Colors.orange,
+    Colors.purple,
+  ];
+
+  Color _getRandomColor() {
+    Random random = Random();
+    return _predefinedColors[random.nextInt(_predefinedColors.length)];
+  }
+
   void _saveNote(NotesNotifier notifier) {
     if (_titleController.text.isEmpty &&
         _contentController.text.isEmpty &&
@@ -31,23 +47,30 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
       notifier.deleteNote(notifier.currentNote);
       return;
     } else {
-      final List<Note> notes = [];
+      final notes = ref.read(notesProvider);
+
+      final currentNote = notes.firstWhere((note) {
+        return note.id == notifier.currentNote;
+      });
+      final List<Note> newNotes = [];
 
       if (_checkBoxes.isNotEmpty) {
         for (int i = 0; i < _checkBoxes.length; i++) {
           final value = _checkBoxValues[i];
           final controller = _checkBoxControllers[i];
 
-          notes.add(Note(controller.text, id: i, isCheckBox: true, isChecked: value));
+          newNotes.add(
+              Note(controller.text, id: i, isCheckBox: true, isChecked: value));
         }
       }
 
       final NoteModel editedNote = NoteModel(
           title: _titleController.text,
           id: notifier.currentNote,
-          categoryId: 1,
+          categoryId: currentNote.categoryId,
+          color: currentNote.color,
           notes: [
-            ...notes,
+            ...newNotes,
             Note(_contentController.text, id: notes.length, isCheckBox: false)
           ]);
 
@@ -104,13 +127,16 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
     ]);
   }
 
-  //FIXME: removes all checkboxes when this screen is opened, it shouldn't
   void _getNote() {
     final notes = ref.read(notesProvider);
     final notesNotifier = ref.read(notesProvider.notifier);
 
     final currentNote = notes.firstWhere((note) {
       return note.id == notesNotifier.currentNote;
+    });
+
+    setState(() {
+      _titleController.text = currentNote.title;
     });
 
     _getLines(currentNote);
@@ -140,8 +166,7 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
                   value: _checkBoxValues[currentIndex],
                   selected: _checkBoxValues[currentIndex],
                   title: TextFormField(
-                      controller:
-                          _checkBoxControllers[currentIndex],
+                      controller: _checkBoxControllers[currentIndex],
                       maxLines: null,
                       minLines: null),
                   onChanged: (newVal) {
@@ -168,9 +193,18 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
   @override
   Widget build(BuildContext context) {
     final notesNotifier = ref.read(notesProvider.notifier);
+    final notes = ref.read(notesProvider);
+
+    final currentNote = notes.firstWhere((note) {
+      return note.id == notesNotifier.currentNote;
+    });
 
     return Scaffold(
+      backgroundColor: currentNote.color ?? _getRandomColor(),
       appBar: AppBar(
+          elevation: 0.0,
+          surfaceTintColor: Colors.transparent,
+          backgroundColor: Colors.transparent,
           leading: ElevatedButton(
               style: ElevatedButton.styleFrom(shape: const CircleBorder()),
               onPressed: () {

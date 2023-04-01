@@ -1,6 +1,11 @@
+import 'dart:math' show Random;
+
+import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/note.dart';
+import '../pages/landing_page/features/notes_list.dart' show ListLayout;
 
 class NotesNotifier extends StateNotifier<List<NoteModel>> {
   NotesNotifier()
@@ -56,23 +61,46 @@ class NotesNotifier extends StateNotifier<List<NoteModel>> {
         highestId = element.id;
       }
     }
-    return (highestId+1);
+    return (highestId + 1);
   }
 
   /// Add a new note.
   void newNote(NoteModel newNote) {
-    state = [...state, newNote];
+    final temp = NoteModel.fromExisting(
+      existing: newNote,
+      noteColor: _getRandomColor(),
+    );
+    state = [...state, temp];
   }
 
-  void saveNote(NoteModel existing){
-    final index = state.indexOf(state.firstWhere((note) {return note.id == existing.id;}));
-    state[index] = existing;
+  void saveNote(NoteModel existing) {
+    final index = state.indexOf(state.firstWhere((note) {
+      return note.id == existing.id;
+    }));
+    state[index] = NoteModel.fromExisting(
+        existing: existing, noteColor: existing.color ?? _getRandomColor());
     state = List.from(state);
   }
 
   void deleteNote(int id) {
-    final index = state.indexOf(state.firstWhere((note) {return note.id == id;}));
+    final index = state.indexOf(state.firstWhere((note) {
+      return note.id == id;
+    }));
     state.removeAt(index);
     state = List.from(state);
+  }
+
+  final List<Color> _predefinedColors = [
+    Colors.amber,
+    Colors.blue,
+    Colors.green,
+    Colors.yellow,
+    Colors.orange,
+    Colors.purple,
+  ];
+
+  Color _getRandomColor() {
+    Random random = Random();
+    return _predefinedColors[random.nextInt(_predefinedColors.length)];
   }
 }

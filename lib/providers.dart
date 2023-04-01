@@ -13,3 +13,5 @@ final categoriesProvider =
 
 final notesProvider = StateNotifierProvider<NotesNotifier, List<NoteModel>>(
     (ref) => NotesNotifier());
+
+final filterProvider = StateProvider<int?>((ref) => null);

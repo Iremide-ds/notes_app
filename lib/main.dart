@@ -28,8 +28,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'V Notes',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      //TODO: dark theme
+      darkTheme: AppTheme.darkTheme,
       routes: AppRouter.routes,
     );
   }

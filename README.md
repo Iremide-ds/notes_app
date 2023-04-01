@@ -1,2 +1,2 @@
-# notes_app
+# V Notes
 A note taking app.
