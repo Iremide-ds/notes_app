@@ -35,7 +35,8 @@ class _NewNoteScreenState extends ConsumerState<NewNoteScreen> {
           final value = _checkBoxValues[i];
           final controller = _checkBoxControllers[i];
 
-          notes.add(Note(controller.text, id: i, isCheckBox: true, isChecked: value));
+          notes.add(
+              Note(controller.text, id: i, isCheckBox: true, isChecked: value));
         }
       }
 
@@ -43,10 +44,11 @@ class _NewNoteScreenState extends ConsumerState<NewNoteScreen> {
           title: _titleController.text,
           id: notifier.newNoteID,
           categoryId: 1,
+          path: '',
           notes: [
             ...notes,
             Note(_contentController.text, id: notes.length, isCheckBox: false)
-          ]);
+          ], isAudio: false);
 
       notifier.newNote(newNote);
     }
@@ -69,8 +71,11 @@ class _NewNoteScreenState extends ConsumerState<NewNoteScreen> {
               title: TextFormField(
                   controller:
                       _checkBoxControllers[_checkBoxControllers.length - 1],
-                maxLines: null,
-                minLines: null),
+                  decoration: const InputDecoration(
+                      border: OutlineInputBorder(borderSide: BorderSide.none)),
+                  maxLines: null,
+                  minLines: null),
+              splashRadius: 0.0,
               onChanged: (newVal) {
                 setState(() {
                   _checkBoxValues[currentIndex] = newVal!;
@@ -83,13 +88,11 @@ class _NewNoteScreenState extends ConsumerState<NewNoteScreen> {
 
   void _addBullet() {
     //TODO: add bullet before start of the sentence nearest to a full stop
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon!')));
   }
 
   void _initBottomAppBarItems() {
     _bottomAppBarItems.addAll([
-      {'widget': _CustomIconButton(icon: const Text('B'), onPressed: () {})},
-      {'widget': _CustomIconButton(icon: const Text('U'), onPressed: () {})},
-      {'widget': _CustomIconButton(icon: const Text('I'), onPressed: () {})},
       {
         'widget': _CustomIconButton(
             icon: const Icon(Icons.check_box), onPressed: _newCheckBox)
@@ -125,7 +128,11 @@ class _NewNoteScreenState extends ConsumerState<NewNoteScreen> {
           child: Form(
         child: Column(
           children: [
-            TextFormField(controller: _titleController),
+            TextFormField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                  border: OutlineInputBorder(borderSide: BorderSide.none), hintText: 'Title'),
+            ),
             // Body here
             Expanded(
                 child: SizedBox(
@@ -186,6 +193,8 @@ class _NoteContent extends StatelessWidget {
           if (index == checkboxes.length) {
             return TextFormField(
               controller: contentController,
+              decoration: const InputDecoration(
+                  border: OutlineInputBorder(borderSide: BorderSide.none)),
               maxLines: null,
               minLines: null,
             );

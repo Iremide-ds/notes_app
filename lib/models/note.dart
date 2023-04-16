@@ -3,17 +3,20 @@ import 'package:flutter/material.dart';
 /// A collection of [Note]s.
 class NoteModel {
   final int id, categoryId;
-  final String title;
+  final String title, path;
   final Color? color;
   final List<Note> notes;
+  final bool isAudio;
 
   /// Instance of a collection of notes.
   NoteModel(
-      {required this.title,
+      {required this.isAudio,
+      required this.title,
       required this.id,
       required this.categoryId,
       this.color,
-      required this.notes});
+      required this.notes,
+      required this.path});
 
   NoteModel.fromExisting(
       {required NoteModel existing, required Color noteColor})
@@ -21,6 +24,8 @@ class NoteModel {
         categoryId = existing.categoryId,
         title = existing.title,
         notes = existing.notes,
+        isAudio = existing.isAudio,
+        path = existing.path,
         color = noteColor;
 }
 

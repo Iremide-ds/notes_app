@@ -15,7 +15,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  ListLayout layout = ListLayout.grid;
+  ListLayout _layout = ListLayout.grid;
+  bool _showOptions = false;
 
   @override
   Widget build(BuildContext context) {
@@ -28,21 +29,23 @@ class _HomePageState extends State<HomePage> {
         toolbarHeight: AppDimensions.screenHeight * 0.1,
         actions: [
           IconButton(
-              style: IconButton.styleFrom(backgroundColor: Colors.white24, iconSize: AppDimensions.screenHeight * 0.04),
+              style: IconButton.styleFrom(
+                  backgroundColor: Colors.white24,
+                  iconSize: AppDimensions.screenHeight * 0.04),
               onPressed: () {
                 setState(() {
-                  switch (layout) {
+                  switch (_layout) {
                     case ListLayout.grid:
-                      layout = ListLayout.list;
+                      _layout = ListLayout.list;
                       break;
                     case ListLayout.list:
-                      layout = ListLayout.grid;
+                      _layout = ListLayout.grid;
                       break;
                   }
                 });
               },
               icon: Icon(
-                (layout == ListLayout.list) ? Icons.list : Icons.dashboard,
+                (_layout == ListLayout.list) ? Icons.list : Icons.dashboard,
                 color: Colors.white,
               ))
         ],
@@ -56,25 +59,71 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
-                    width: AppDimensions.screenWidth * 0.4,
+                    width: AppDimensions.width1,
                     child: const Text('My Notes',
-                        style: TextStyle(color: Colors.white, fontSize: 80))),
+                        style: TextStyle(color: Colors.white, fontSize: 65))),
                 SizedBox(height: AppDimensions.screenHeight * 0.02),
                 const CategoriesList(),
                 SizedBox(height: AppDimensions.screenHeight * 0.02),
-                NotesList(layout)
+                NotesList(_layout)
               ],
             ),
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-          shape: const CircleBorder(),
-          onPressed: () {
-            //TODO: show list of options including voice record or noraml note
-            Navigator.of(context).pushNamed(AppRouter.newNoteRoute);
-          },
-          child: const Center(child: Icon(Icons.add))),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          color: Colors.white24,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Visibility(
+                visible: _showOptions,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      vertical: AppDimensions.padding3),
+                  child: FloatingActionButton(
+                    shape: const CircleBorder(),
+                    onPressed: () {
+                      setState(() {
+                        _showOptions = !_showOptions;
+                      });
+                      Navigator.of(context).pushNamed(AppRouter.recordAudio);
+                    },
+                    child: const Icon(Icons.mic),
+                  ),
+                )),
+            Visibility(
+                visible: _showOptions,
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                      top: AppDimensions.padding3,
+                      bottom: AppDimensions.defaultPadding),
+                  child: FloatingActionButton(
+                    shape: const CircleBorder(),
+                    onPressed: () {
+                      setState(() {
+                        _showOptions = !_showOptions;
+                      });
+                      Navigator.of(context).pushNamed(AppRouter.newNoteRoute);
+                    },
+                    child: const Icon(Icons.create),
+                  ),
+                )),
+            FloatingActionButton(
+                shape: const CircleBorder(),
+                onPressed: () {
+                  setState(() {
+                    _showOptions = !_showOptions;
+                  });
+                },
+                child: const Center(child: Icon(Icons.add))),
+          ],
+        ),
+      ),
     );
   }
 }

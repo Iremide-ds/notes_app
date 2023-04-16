@@ -67,7 +67,7 @@ class _CategoryButton extends ConsumerWidget {
           child: Text(
             category.name,
             style: TextStyle(
-                fontSize: 20,
+                fontSize: AppDimensions.fontSize1,
                 fontWeight: FontWeight.w600,
                 color: (filter == category.id) ? Colors.black : Colors.white),
           )),

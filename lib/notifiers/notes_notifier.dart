@@ -1,46 +1,48 @@
 import 'dart:math' show Random;
+import 'dart:io' as io;
 
 import 'package:flutter/material.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 import '../models/note.dart';
-import '../pages/landing_page/features/notes_list.dart' show ListLayout;
+import '../util/constants.dart';
 
 class NotesNotifier extends StateNotifier<List<NoteModel>> {
-  NotesNotifier()
-      : super([
-          NoteModel(
+  NotesNotifier() : super([]) {
+    _fetchLocalNotes();
+  }
+
+  void _fetchLocalNotes() async {
+    final files = await _listOfAudioFiles();
+
+    final List<NoteModel> voiceNotes = files.map((element) {
+      return NoteModel(
+          title: 'Voice Note',
+          id: newNoteID,
+          categoryId: 3,
+          path: element.uri.toString(),
+          notes: [
+            Note(
+              element.statSync().modified.toIso8601String(),
               id: 1,
-              categoryId: 1,
-              notes: [
-                Note('Remember to wash the rice!', id: 1, isCheckBox: false)
-              ],
-              title: 'Another note'),
-          NoteModel(
-              id: 2,
-              categoryId: 2,
-              notes: [
-                Note('Remember to wash the rice and forget',
-                    id: 1, isCheckBox: false)
-              ],
-              title: 'Our note'),
-          NoteModel(
-              id: 3,
-              categoryId: 2,
-              notes: [Note('Remember to be awake', id: 1, isCheckBox: false)],
-              title: 'That note'),
-          NoteModel(
-              id: 4,
-              categoryId: 1,
-              notes: [Note('I want to be ', id: 1, isCheckBox: false)],
-              title: 'This note'),
-          NoteModel(
-              id: 5,
-              categoryId: 1,
-              notes: [Note('Random text!!!!!!!', id: 1, isCheckBox: false)],
-              title: 'A note')
-        ]);
+              isCheckBox: false,
+            )
+          ],
+          color: _getRandomColor(),
+          isAudio: true);
+    }).toList();
+
+    state = [...state, ...voiceNotes];
+  }
+
+  Future<List<io.FileSystemEntity>> _listOfAudioFiles() async {
+    final directory = (await getApplicationDocumentsDirectory()).path;
+
+    return io.Directory("$directory/$audioFolder/").listSync();
+  }
 
   int? _currentNote;
 

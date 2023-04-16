@@ -69,10 +69,11 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
           id: notifier.currentNote,
           categoryId: currentNote.categoryId,
           color: currentNote.color,
+          path: '',
           notes: [
             ...newNotes,
             Note(_contentController.text, id: notes.length, isCheckBox: false)
-          ]);
+          ], isAudio: false);
 
       notifier.saveNote(editedNote);
     }
@@ -109,14 +110,11 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
 
   void _addBullet() {
     //TODO: add bullet before start of the sentence nearest to a full stop
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon!')));
   }
 
   void _initBottomAppBarItems() {
-    _bottomAppBarItems.addAll([
-      {'widget': _CustomIconButton(icon: const Text('B'), onPressed: () {})},
-      {'widget': _CustomIconButton(icon: const Text('U'), onPressed: () {})},
-      {'widget': _CustomIconButton(icon: const Text('I'), onPressed: () {})},
-      {
+    _bottomAppBarItems.addAll([{
         'widget': _CustomIconButton(
             icon: const Icon(Icons.check_box), onPressed: _newCheckBox)
       },
