@@ -26,4 +26,5 @@ class AppDimensions {
   static final double width2 = AppDimensions.screenWidth * 0.8;
 
   static const double fontSize1 = 20;
+  static const double fontSize2 = 65;
 }

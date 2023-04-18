@@ -1,13 +1,23 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart' show getApplicationDocumentsDirectory;
 
 import 'config/app_routes.dart';
 import 'config/app_theme.dart';
+import 'models/note.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  Directory directory = await getApplicationDocumentsDirectory();
+  Hive.init(directory.path);
+  Hive.registerAdapter(NoteModelAdapter());
+  Hive.registerAdapter(NoteAdapter());
 
   /// Enforce portrait mode
   await SystemChrome.setPreferredOrientations([

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../notifiers/notes_notifier.dart';
@@ -22,12 +23,13 @@ class _NewNoteScreenState extends ConsumerState<NewNoteScreen> {
   final List<bool> _checkBoxValues = [];
   final List<StatefulBuilder> _checkBoxes = [];
 
-  void _saveNote(NotesNotifier notifier) {
+  Future<void> _saveNote(NotesNotifier notifier) async {
     if (_titleController.text.isEmpty &&
         _contentController.text.isEmpty &&
         (_checkBoxes.isEmpty || _checkBoxControllers.first.text.isEmpty)) {
       return;
     } else {
+      final newID = notifier.newNoteID;
       final List<Note> notes = [];
 
       if (_checkBoxes.isNotEmpty) {
@@ -35,22 +37,29 @@ class _NewNoteScreenState extends ConsumerState<NewNoteScreen> {
           final value = _checkBoxValues[i];
           final controller = _checkBoxControllers[i];
 
-          notes.add(
-              Note(controller.text, id: i, isCheckBox: true, isChecked: value));
+          notes.add(Note(controller.text,
+              id: i, isCheckBox: true, isChecked: value, modelID: newID));
         }
       }
 
+      final allNotes = [
+        ...notes,
+        Note(_contentController.text,
+            id: notes.length, isCheckBox: false, modelID: newID)
+      ];
+
+      final notesWatch = ref.read(notesProvider.notifier);
+      notesWatch.createNewNotes(allNotes);
+
       final NoteModel newNote = NoteModel(
           title: _titleController.text,
-          id: notifier.newNoteID,
+          id: newID,
           categoryId: 1,
           path: '',
-          notes: [
-            ...notes,
-            Note(_contentController.text, id: notes.length, isCheckBox: false)
-          ], isAudio: false);
+          notes: allNotes.map((e) => e.id).toList(),
+          isAudio: false);
 
-      notifier.newNote(newNote);
+      await notifier.newNote(newNote);
     }
   }
 
@@ -88,7 +97,8 @@ class _NewNoteScreenState extends ConsumerState<NewNoteScreen> {
 
   void _addBullet() {
     //TODO: add bullet before start of the sentence nearest to a full stop
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon!')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Coming soon!')));
   }
 
   void _initBottomAppBarItems() {
@@ -112,18 +122,21 @@ class _NewNoteScreenState extends ConsumerState<NewNoteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final notesNotifier = ref.read(notesProvider.notifier);
+    final notesNotifier = ref.read(notesModelProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
+          scrolledUnderElevation: 0.0,
           leading: ElevatedButton(
-        style: ElevatedButton.styleFrom(shape: const CircleBorder()),
-        onPressed: () {
-          _saveNote(notesNotifier);
-          Navigator.of(context).pop();
-        },
-        child: const Icon(Icons.arrow_back_ios),
-      )),
+            style: ElevatedButton.styleFrom(shape: const CircleBorder()),
+            onPressed: () async {
+              await _saveNote(notesNotifier);
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
+            },
+            child: const Icon(Icons.arrow_back_ios),
+          )),
       body: SafeArea(
           child: Form(
         child: Column(
@@ -131,15 +144,17 @@ class _NewNoteScreenState extends ConsumerState<NewNoteScreen> {
             TextFormField(
               controller: _titleController,
               decoration: const InputDecoration(
-                  border: OutlineInputBorder(borderSide: BorderSide.none), hintText: 'Title'),
+                  border: OutlineInputBorder(borderSide: BorderSide.none),
+                  hintText: 'Title'),
             ),
             // Body here
             Expanded(
-                child: SizedBox(
-              child: _NoteContent(
-                  checkboxes: _checkBoxes,
-                  contentController: _contentController),
-            ))
+              child: SizedBox(
+                child: _NoteContent(
+                    checkboxes: _checkBoxes,
+                    contentController: _contentController),
+              ),
+            )
           ],
         ),
       )),
@@ -191,12 +206,21 @@ class _NoteContent extends StatelessWidget {
         itemCount: checkboxes.length + 1,
         itemBuilder: (ctx, index) {
           if (index == checkboxes.length) {
-            return TextFormField(
-              controller: contentController,
-              decoration: const InputDecoration(
-                  border: OutlineInputBorder(borderSide: BorderSide.none)),
-              maxLines: null,
-              minLines: null,
+            return LayoutBuilder(
+              builder: (ctx, constraints) {
+                final size = MediaQuery.of(context).size;
+
+                return TextFormField(
+                  controller: contentController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                    hintText: 'Content...',
+                    hintStyle: TextStyle(fontStyle: FontStyle.italic),
+                  ),
+                  maxLines: null,
+                  minLines: (size.height * 0.04).toInt(),
+                );
+              },
             );
           } else {
             return checkboxes[index];

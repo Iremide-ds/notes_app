@@ -15,6 +15,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final PageController _pageController = PageController(
+    initialPage: 0,
+    viewportFraction: 1.0,
+  );
   ListLayout _layout = ListLayout.grid;
   bool _showOptions = false;
 
@@ -51,24 +55,52 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-              horizontal: AppDimensions.screenWidth * 0.03),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                    width: AppDimensions.width1,
-                    child: const Text('My Notes',
-                        style: TextStyle(color: Colors.white, fontSize: 65))),
-                SizedBox(height: AppDimensions.screenHeight * 0.02),
-                const CategoriesList(),
-                SizedBox(height: AppDimensions.screenHeight * 0.02),
-                NotesList(_layout)
-              ],
+        child: PageView(
+          controller: _pageController,
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(
+                  horizontal: AppDimensions.screenWidth * 0.03),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: AppDimensions.width1,
+                      child: const Text(
+                        'My Notes',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: AppDimensions.fontSize2,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: AppDimensions.screenHeight * 0.02),
+                    const CategoriesList(),
+                    SizedBox(height: AppDimensions.screenHeight * 0.02),
+                    NotesList(_layout)
+                  ],
+                ),
+              ),
             ),
-          ),
+            Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppDimensions.screenWidth * 0.03,
+                ),
+                child: SizedBox(
+                  height: AppDimensions.screenHeight,
+                  width: AppDimensions.screenWidth,
+                  child: const Center(
+                    child: Text(
+                      'Coming Soon!',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: AppDimensions.fontSize2,
+                      ),
+                    ),
+                  ),
+                )),
+          ],
         ),
       ),
       floatingActionButton: Container(
@@ -81,21 +113,22 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Visibility(
-                visible: _showOptions,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: AppDimensions.padding3),
-                  child: FloatingActionButton(
-                    shape: const CircleBorder(),
-                    onPressed: () {
-                      setState(() {
-                        _showOptions = !_showOptions;
-                      });
-                      Navigator.of(context).pushNamed(AppRouter.recordAudio);
-                    },
-                    child: const Icon(Icons.mic),
-                  ),
-                )),
+              visible: _showOptions,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    vertical: AppDimensions.padding3),
+                child: FloatingActionButton(
+                  shape: const CircleBorder(),
+                  onPressed: () {
+                    setState(() {
+                      _showOptions = !_showOptions;
+                    });
+                    Navigator.of(context).pushNamed(AppRouter.recordAudio);
+                  },
+                  child: const Icon(Icons.mic),
+                ),
+              ),
+            ),
             Visibility(
                 visible: _showOptions,
                 child: Padding(

@@ -40,14 +40,14 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
     return _predefinedColors[random.nextInt(_predefinedColors.length)];
   }
 
-  void _saveNote(NotesNotifier notifier) {
+  Future<void> _saveNote(NotesNotifier notifier) async {
     if (_titleController.text.isEmpty &&
         _contentController.text.isEmpty &&
         (_checkBoxes.isEmpty || _checkBoxControllers.first.text.isEmpty)) {
       notifier.deleteNote(notifier.currentNote);
       return;
     } else {
-      final notes = ref.read(notesProvider);
+      final notes = ref.read(notesModelProvider);
 
       final currentNote = notes.firstWhere((note) {
         return note.id == notifier.currentNote;
@@ -59,10 +59,22 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
           final value = _checkBoxValues[i];
           final controller = _checkBoxControllers[i];
 
-          newNotes.add(
-              Note(controller.text, id: i, isCheckBox: true, isChecked: value));
+          newNotes.add(Note(controller.text,
+              id: i,
+              isCheckBox: true,
+              isChecked: value,
+              modelID: notifier.currentNote));
         }
       }
+
+      final allNotes = [
+        ...newNotes,
+        Note(_contentController.text,
+            id: notes.length, isCheckBox: false, modelID: notifier.currentNote)
+      ];
+
+      final notesWatch = ref.read(notesProvider.notifier);
+      await notesWatch.createNewNotes(allNotes);
 
       final NoteModel editedNote = NoteModel(
           title: _titleController.text,
@@ -70,10 +82,8 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
           categoryId: currentNote.categoryId,
           color: currentNote.color,
           path: '',
-          notes: [
-            ...newNotes,
-            Note(_contentController.text, id: notes.length, isCheckBox: false)
-          ], isAudio: false);
+          notes: allNotes.map((e) => e.id).toList(),
+          isAudio: false);
 
       notifier.saveNote(editedNote);
     }
@@ -110,11 +120,13 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
 
   void _addBullet() {
     //TODO: add bullet before start of the sentence nearest to a full stop
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Coming soon!')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Coming soon!')));
   }
 
   void _initBottomAppBarItems() {
-    _bottomAppBarItems.addAll([{
+    _bottomAppBarItems.addAll([
+      {
         'widget': _CustomIconButton(
             icon: const Icon(Icons.check_box), onPressed: _newCheckBox)
       },
@@ -126,8 +138,8 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
   }
 
   void _getNote() {
-    final notes = ref.read(notesProvider);
-    final notesNotifier = ref.read(notesProvider.notifier);
+    final notes = ref.read(notesModelProvider);
+    final notesNotifier = ref.read(notesModelProvider.notifier);
 
     final currentNote = notes.firstWhere((note) {
       return note.id == notesNotifier.currentNote;
@@ -145,7 +157,10 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
   }
 
   void _getLines(NoteModel noteModel) {
-    for (Note note in noteModel.notes) {
+    final notes = ref
+        .read(notesProvider)
+        .where((element) => element.modelID == noteModel.id);
+    for (Note note in notes) {
       final TextEditingController controller =
           TextEditingController(text: note.content);
 
@@ -181,6 +196,14 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
     }
   }
 
+  Color? _getColor(String? colorString) {
+    if (colorString == null) return null;
+    String valueString =
+        colorString.split('(0x')[1].split(')')[0]; // kind of hacky..
+    int value = int.parse(valueString, radix: 16);
+    return Color(value);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -190,15 +213,15 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final notesNotifier = ref.read(notesProvider.notifier);
-    final notes = ref.read(notesProvider);
+    final notesNotifier = ref.read(notesModelProvider.notifier);
+    final notes = ref.read(notesModelProvider);
 
     final currentNote = notes.firstWhere((note) {
       return note.id == notesNotifier.currentNote;
     });
 
     return Scaffold(
-      backgroundColor: currentNote.color ?? _getRandomColor(),
+      backgroundColor: _getColor(currentNote.color) ?? _getRandomColor(),
       appBar: AppBar(
           elevation: 0.0,
           surfaceTintColor: Colors.transparent,
@@ -206,8 +229,9 @@ class _ExistingNoteScreenState extends ConsumerState<ExistingNoteScreen> {
           leading: ElevatedButton(
               style: ElevatedButton.styleFrom(shape: const CircleBorder()),
               onPressed: () {
-                _saveNote(notesNotifier);
-                Navigator.of(context).pop();
+                _saveNote(notesNotifier).then((_) {
+                  Navigator.of(context).pop();
+                });
               },
               child: const Icon(Icons.arrow_back_ios))),
       body: SafeArea(

@@ -5,8 +5,7 @@ import '../models/category.dart';
 class CategoriesNotifier extends StateNotifier<List<NoteCategory>> {
   CategoriesNotifier()
       : super([
-          const NoteCategory(id: 1, name: 'Important'),
-          const NoteCategory(id: 2, name: 'To-do'),
+          const NoteCategory(id: 1, name: 'Note'),
           const NoteCategory(id: 3, name: 'Audio'),
         ]);
 

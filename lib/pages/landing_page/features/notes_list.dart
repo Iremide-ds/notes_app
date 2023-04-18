@@ -1,6 +1,5 @@
 import 'dart:math' show Random;
 
-import 'package:audio_session/audio_session.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
@@ -9,6 +8,8 @@ import 'package:flutter_sound/public/flutter_sound_player.dart';
 import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:flutter_sound_platform_interface/flutter_sound_platform_interface.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:audio_session/audio_session.dart';
+import 'package:intl/intl.dart';
 
 import '../../../config/app_dimensions.dart';
 import '../../../config/app_routes.dart';
@@ -39,13 +40,13 @@ class _NotesListState extends ConsumerState<NotesList> {
   bool _mplaybackReady = true;
   String _mPath = '';
 
-  get _notifier => ref.read(notesProvider.notifier);
+  get _notifier => ref.read(notesModelProvider.notifier);
 
   int? get _filter => ref.watch(filterProvider);
 
   List<NoteModel> get _notes => (_filter == null)
-      ? ref.watch(notesProvider)
-      : ref.watch(notesProvider).where((note) {
+      ? ref.watch(notesModelProvider)
+      : ref.watch(notesModelProvider).where((note) {
           return note.categoryId == _filter;
         }).toList();
 
@@ -61,11 +62,11 @@ class _NotesListState extends ConsumerState<NotesList> {
     await session.configure(AudioSessionConfiguration(
       avAudioSessionCategory: AVAudioSessionCategory.playback,
       avAudioSessionCategoryOptions:
-      AVAudioSessionCategoryOptions.allowBluetooth |
-      AVAudioSessionCategoryOptions.defaultToSpeaker,
+          AVAudioSessionCategoryOptions.allowBluetooth |
+              AVAudioSessionCategoryOptions.defaultToSpeaker,
       avAudioSessionMode: AVAudioSessionMode.defaultMode,
       avAudioSessionRouteSharingPolicy:
-      AVAudioSessionRouteSharingPolicy.defaultPolicy,
+          AVAudioSessionRouteSharingPolicy.defaultPolicy,
       avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
       androidAudioAttributes: const AndroidAudioAttributes(
         contentType: AndroidAudioContentType.unknown,
@@ -134,41 +135,6 @@ class _NotesListState extends ConsumerState<NotesList> {
 
   @override
   Widget build(BuildContext context) {
-    Widget makeBody() {
-      return Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.all(3),
-            padding: const EdgeInsets.all(3),
-            height: 80,
-            width: double.infinity,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFAF0E6),
-              border: Border.all(
-                color: Colors.indigo,
-                width: 3,
-              ),
-            ),
-            child: Row(children: [
-              ElevatedButton(
-                onPressed: getPlaybackFn(''),
-                //color: Colors.white,
-                //disabledColor: Colors.grey,
-                child: Text(_mPlayer!.isPlaying ? 'Stop' : 'Play'),
-              ),
-              const SizedBox(
-                width: 20,
-              ),
-              Text(_mPlayer!.isPlaying
-                  ? 'Playback in progress'
-                  : 'Player is stopped'),
-            ]),
-          ),
-        ],
-      );
-    }
-
     if (_notes.isEmpty) {
       return const SizedBox(
         child: Center(
@@ -215,6 +181,7 @@ class _NotesListState extends ConsumerState<NotesList> {
                 return _NoteCard(_notes[index], secondColumn: (index % 2 == 0),
                     onPressed: () {
                   if (_notes[index].isAudio) {
+                    getPlaybackFn(_notes[index].path)!();
                   } else {
                     _notifier.currentNote = _notes[index].id;
                     Navigator.of(context)
@@ -254,6 +221,14 @@ class _NoteCard extends StatelessWidget {
     return _predefinedColors[random.nextInt(_predefinedColors.length)];
   }
 
+  Color? _getColor(String? colorString) {
+    if (colorString == null) return null;
+    String valueString =
+        colorString.split('(0x')[1].split(')')[0]; // kind of hacky..
+    int value = int.parse(valueString, radix: 16);
+    return Color(value);
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -261,7 +236,7 @@ class _NoteCard extends StatelessWidget {
         onPressed();
       },
       child: Card(
-        color: note.color ?? _getRandomColor(),
+        color: _getColor(note.color) ?? _getRandomColor(),
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.only(
                 topLeft: secondColumn
@@ -276,10 +251,14 @@ class _NoteCard extends StatelessWidget {
         // margin: EdgeInsets.zero,
         child: Padding(
           padding: const EdgeInsets.all(AppDimensions.padding1),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            _NoteHeader(id: note.id, title: note.title),
-            _NoteContent(content: note.notes),
-          ]),
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              _NoteHeader(id: note.id, title: note.title),
+              _NoteContent(
+                  modelID: note.id, content: note.notes, isAudio: note.isAudio),
+            ]),
+          ),
         ),
       ),
     );
@@ -308,7 +287,7 @@ class _NoteHeader extends StatelessWidget {
           builder: (ctx, ref, child) {
             return IconButton(
                 onPressed: () {
-                  final notifier = ref.watch(notesProvider.notifier);
+                  final notifier = ref.watch(notesModelProvider.notifier);
                   notifier.deleteNote(id);
                 },
                 icon: const Icon(Icons.delete, color: Colors.black));
@@ -320,18 +299,53 @@ class _NoteHeader extends StatelessWidget {
 }
 
 class _NoteContent extends StatelessWidget {
-  final List<Note> content;
+  final int modelID;
+  final List<int> content;
+  final bool isAudio;
 
-  const _NoteContent({Key? key, required this.content}) : super(key: key);
+  const _NoteContent(
+      {Key? key,
+      required this.content,
+      required this.modelID,
+      required this.isAudio})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
         child: Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              content.first.content,
-              overflow: TextOverflow.ellipsis,
+            child: Consumer(
+              builder: (ctx, ref, child) {
+                try {
+                  final notes = ref.watch(notesProvider);
+                  if (notes.isEmpty) {
+                    return const Text(
+                      '...',
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  } else {
+                    final note =
+                        notes.firstWhere((note) => note.modelID == modelID);
+
+                    final content =
+                        isAudio ? DateTime.parse(note.content) : note.content;
+
+                    return Text(
+                      isAudio
+                          ? '${DateFormat(DateFormat.YEAR_MONTH_DAY).format(content as DateTime)}. ${DateFormat(DateFormat.HOUR_MINUTE).format(content)}'
+                          : content.toString(),
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  }
+                } on Exception catch (e) {
+                  debugPrintStack(stackTrace: (e as StateError).stackTrace);
+                  return const Text(
+                    '...',
+                    overflow: TextOverflow.ellipsis,
+                  );
+                }
+              },
             )));
   }
 }
